@@ -5,7 +5,7 @@ int rev_steps = 200;
 int left_step_pin = 8;
 int left_dir_pin = 9;
 int right_step_pin = 10;
-int right_dir_pin = 11;
+int right_dir_pin = 12;
 
 // vars for stepper speed
 unsigned long last_left = 0;
@@ -113,33 +113,35 @@ void loop() {
 
       //if the command is 'a' turn left
       if (serial_command == "a") {
-        Serial.println("left");
+//        Serial.println("left");
         right_step();
         left_step(false);
       }
       else if (serial_command == "d") {
-        Serial.println("right");
+//        Serial.println("right");
         right_step(false);
         left_step();
       }
       else if (serial_command == "w") {
-        Serial.println("fwd");
+//        Serial.println("fwd");
         right_step();
         left_step();
       }
 
       else if (serial_command == "s") {
-        Serial.println("rvs");
+//        Serial.println("rvs");
         right_step(false);
         left_step(false);
       }
       
       else {
         serial_command = "";
+       
       }
 
       if (Serial.available() > 0) {
         serial_command = "";
+        
         state = 0;
       }
 
