@@ -4,6 +4,8 @@
 #include <string.h>
 #include <errno.h>
 #include <wiringSerial.h>
+// #include <opencv2/opencv.hpp>
+// #include <opencv2/highgui.hpp>
 using namespace std;
 
 int main ()
@@ -29,9 +31,8 @@ char a = 'b';
 
 
     cout << "wrote command="<< command <<endl;
-
-    // usleep(500000);    // char msg = 'a';
-    // cout << "waiting " <<endl;
+    // let the message bounce for a moment
+    usleep(50000);  
     
     string data = "";
 
@@ -44,13 +45,8 @@ char a = 'b';
     cout << "got=[" << data << "]" << endl;
 
     
-    // cout <<endl <<  "flushing " <<endl;
-
     fflush (stdout) ;
     serialFlush(fd);
-    // usleep(2000000);    // char msg = 'a';
-    // serialPuts(fd, "b\n");
-    // usleep(2000000);    // char msg = 'a';
 
 
   }

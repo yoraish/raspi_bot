@@ -1,3 +1,3 @@
 #!/bin/bash
 
-g++ -std=c++11 -lwiringPi bot.cpp -o bot
+g++ -std=c++11 -lwiringPi $(pkg-config --libs --cflags opencv) bot.cpp -o bot
