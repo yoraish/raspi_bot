@@ -1,0 +1,6 @@
+Notes for raspi_bot project
+
+======
+RaspiCam library
+======
+Seems like passing the camera object to a function breaks things, but passing it by pointer works
