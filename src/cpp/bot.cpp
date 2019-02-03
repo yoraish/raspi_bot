@@ -32,7 +32,7 @@ char a = 'b';
 
     cout << "wrote command="<< command <<endl;
     // let the message bounce for a moment
-    usleep(50000);  
+    usleep(50000);  // sleep for 5 ms
     
     string data = "";
 
