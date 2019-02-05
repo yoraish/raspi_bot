@@ -1,6 +1,9 @@
 #!/bin/bash
 export LIBRARY_PATH=/opt/vc/lib
 
-g++ -std=c++11 -lwiringPi  bot.cpp -o bot
+# g++ -std=c++11 -lwiringPi  bot.cpp -o bot
+
+g++ -std=c++11 -lwiringPi $(pkg-config --libs --cflags opencv) -o bot bot.cpp
+
 
 
