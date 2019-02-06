@@ -23,6 +23,8 @@ int camera_feeder()
     // initializing camera feed
     VideoCapture cap(0);
     cap.set(CV_CAP_PROP_BUFFERSIZE, 1); // internal buffer will now store only 3 frames
+    cap.set(CV_CAP_PROP_FRAME_WIDTH,640); // experimenting with this and the next lines
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
 
     if (!cap.isOpened())
     {
@@ -53,7 +55,7 @@ int camera_feeder()
         flip(hflipped, final_frame, 0);
 
         imshow("Live", final_frame);
-        int key = cv::waitKey(30);
+        int key = cv::waitKey(1); // changed from 30
     }
 
     // unreachable code, but leaving it here for reference
