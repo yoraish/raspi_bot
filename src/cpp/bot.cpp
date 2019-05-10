@@ -23,8 +23,8 @@ int camera_feeder()
     // initializing camera feed
     VideoCapture cap(0);
     cap.set(CV_CAP_PROP_BUFFERSIZE, 1); // internal buffer will now store only 3 frames
-    cap.set(CV_CAP_PROP_FRAME_WIDTH,640); // experimenting with this and the next lines
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
+    cap.set(CV_CAP_PROP_FRAME_WIDTH,320); // experimenting with this and the next lines
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT,240);
 
     if (!cap.isOpened())
     {
@@ -104,12 +104,27 @@ int handle_command()
     }
 }
 
+
+
 int main(int argc, char **argv)
 {
+    bool use_cam = true;
+    if (argc > 1 ){
+        // then something was specified about showing an image
+        // argv[0] = 0 means no camera
+        // argv[1] = 1 or non existing means camera
+        cout << "this is " << argv[1] << endl;
+        if (*argv[1] == '0'){
+            use_cam = false;
+        }
+    }
 
-    thread camera_thread(camera_feeder);
+    if (use_cam == true){
+        thread camera_thread(camera_feeder);
+        camera_thread.join();
+    }
+
     thread command_thread(handle_command);
-    camera_thread.join();
     command_thread.join();
     return -1;
 }
