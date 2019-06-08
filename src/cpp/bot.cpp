@@ -108,7 +108,7 @@ int handle_command()
 
 int main(int argc, char **argv)
 {
-    bool use_cam = true;
+    bool use_cam = false;
     if (argc > 1 ){
         // then something was specified about showing an image
         // argv[0] = 0 means no camera
