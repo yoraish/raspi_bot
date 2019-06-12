@@ -3,7 +3,7 @@ export LIBRARY_PATH=/opt/vc/lib
 
 # g++ -std=c++11 -lwiringPi  bot.cpp -o bot
 
-g++ -std=c++11 -lwiringPi -pthread $(pkg-config --libs --cflags opencv) -o bot bot.cpp
+g++ -std=c++11 -lwiringPi -pthread $(pkg-config --libs --cflags opencv) -o bot RaspiBot.cpp
 
 
 
