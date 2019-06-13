@@ -1,13 +1,10 @@
 #include "RaspiBot.hpp"
 
-
 /////////////////////////////////
 /*
 * TODO
 * create debug console
 */
-
-
 
 RaspiBot::RaspiBot(bool preview = true)
 {
@@ -28,7 +25,6 @@ RaspiBot::RaspiBot(bool preview = true)
     {
         usleep(2000000); // sleep for 5 ms
 
-        cout << "ok we have arduino" << endl;
         send_command("rit");
         usleep(50000); // sleep for 5 ms
         send_command("lft");
@@ -51,9 +47,15 @@ RaspiBot::RaspiBot(bool preview = true)
         preview_thread.join();
     }
 
-    // keep Spinning
-    while(true){}
+    // // spin the object following thread
+    cout << "* spinning object following thread, detaching from main thread." << endl;
+    thread object_follow_thread(&RaspiBot::object_follow, this);
+    object_follow_thread.join();
 
+    // keep Spinning
+    while (true)
+    {
+    }
 }
 
 RaspiBot::~RaspiBot()
@@ -185,6 +187,158 @@ int RaspiBot::handle_command()
             data += serialGetchar(channel);
         }
         // cout << "got=[" << data << "]" << endl; // TODO move into debug console
+    }
+}
+
+pair<int, int> RaspiBot::get_object_x(Mat img)
+{
+    /*
+    Returns the location in Row,Col of the ball in the image
+    */
+
+    // set thresholds for the color, set to red
+    vector<int> red_lower{0, 100, 100};
+    vector<int> red_upper{10, 255, 255};
+
+    // resize to const size
+    Mat resized = img;
+    resized.resize(600);
+
+    // convolve with gaussian filter
+    Mat blurred = resized;
+    Size kernel_size = Size(11, 11);
+    //    kernel_size.height = 11;
+    //    kernel_size.width = 11;
+    GaussianBlur(blurred, blurred, kernel_size, 0, 0);
+
+    // convert to HSV color scale
+    Mat hsv = blurred;
+    cvtColor(hsv, hsv, COLOR_BGR2HSV);
+
+    // mask the image to only leave red things in
+    Mat mask = hsv;
+    inRange(mask, red_lower, red_upper, mask);
+    Mat kernel(3, 3, CV_64F, 0.33);
+
+    erode(mask, mask, kernel);
+    dilate(mask, mask, kernel);
+
+    vector<vector<Point>> cnts;
+    vector<Vec4i> hir;
+    findContours(mask, cnts, hir, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    if (cnts.size() > 0)
+    {
+        // find largest contour in the area
+        vector<Point> max_contour;
+        int max_area = 0;
+
+        for (vector<Point> contour : cnts)
+        {
+            int area = contourArea(contour);
+            if (area > max_area)
+            {
+                max_area = area;
+                max_contour = contour;
+            }
+        }
+
+        // now we have the largest contour
+        // find the center of the contour
+        Point2f center;
+        float radius;
+
+        minEnclosingCircle(max_contour, center, radius);
+        // cout << "center at col 0 |---" << center.x << "---| " << resized.cols << endl;
+
+        // cout << "center at row 0 |---" << center.y << "---| " << resized.rows << endl;
+
+        // draw a small circle for the found contour's center
+        cv::circle(resized, center, radius, Scalar(255, 255, 155), 3);
+        // draw the enclosing circle
+        // TODO -- to debug console
+        // imshow("with dot", resized);
+        // waitKey(0);
+
+        pair<int, int> coord;
+        coord.first = center.x;
+        coord.second = center.y;
+        return coord;
+    }
+    else
+    {
+        cout << "returning none" << endl;
+        pair<int, int> coord(-1, -1);
+        return coord;
+    }
+
+    drawContours(mask, cnts, 0, 100, 20);
+}
+
+void RaspiBot::object_follow()
+{
+    // function that runs and updates a position of an object, and sends commands to follow it
+    // set up camera
+    // initializing camera feed
+    VideoCapture cap(0);
+    cap.set(CV_CAP_PROP_BUFFERSIZE, 1);    // internal buffer will now store only 3 frames
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320); // experimenting with this and the next lines
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+
+    if (!cap.isOpened())
+    {
+        cerr << "ERROR: Unable to open the camera" << endl;
+        return;
+    }
+
+    Mat frame;
+    cout << "Start grabbing, for following" << endl;
+
+    while (true)
+    {
+
+        // capture image
+        cap >> frame;
+        if (frame.empty())
+        {
+            cerr << "ERROR: Unable to grab from the camera" << endl;
+            break;
+        }
+
+        // flip frame
+        Mat hflipped;
+        // horizonatally
+        flip(frame, hflipped, 1);
+        // vertically
+        Mat final_frame;
+        flip(hflipped, final_frame, 0);
+
+        // get the position of the object
+        pair<int, int> coord = this->get_object_x(final_frame);
+
+        cout << "object at {" << coord.first << ", " << coord.second << "}" << endl;
+
+        // send command accordingly:
+        // obj on left
+        if (coord.first < 140.0 && coord.first > 0.0)
+        {
+            cout << "on left" << endl;
+            //move a little left, one step?
+            this->send_command("lft");
+            //    change THIS TO A ONE STEP FUNCTION ON ARDUINO
+            this->send_command("stp");
+        }
+        else if (coord.first > 180.0)
+        {
+            cout << "on right" << endl;
+            this->send_command("rit");
+            //    change THIS TO A ONE STEP FUNCTION ON ARDUINO
+            this->send_command("stp");
+        }
+        else if (coord.first < 180.0 && coord.first > 140.0)
+        {
+            cout << "in middle " << endl;
+        }
     }
 }
 
