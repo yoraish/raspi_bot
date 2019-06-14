@@ -87,6 +87,14 @@ void RaspiBot::send_command(string cmd)
     {
         str_cmd = "a\n";
     }
+    else if (cmd == "RIT")
+    {
+        str_cmd = "D\n";
+    }
+    else if (cmd == "LFT")
+    {
+        str_cmd = "A\n";
+    }
     else
     {
         str_cmd = "e\n"; //stop
@@ -324,16 +332,12 @@ void RaspiBot::object_follow()
         {
             cout << "on left" << endl;
             //move a little left, one step?
-            this->send_command("lft");
-            //    change THIS TO A ONE STEP FUNCTION ON ARDUINO
-            this->send_command("stp");
+            this->send_command("LFT");
         }
         else if (coord.first > 180.0)
         {
             cout << "on right" << endl;
-            this->send_command("rit");
-            //    change THIS TO A ONE STEP FUNCTION ON ARDUINO
-            this->send_command("stp");
+            this->send_command("RIT");
         }
         else if (coord.first < 180.0 && coord.first > 140.0)
         {
