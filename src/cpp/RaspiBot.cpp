@@ -293,7 +293,7 @@ vector<int> RaspiBot::get_object_x(Mat img)
     drawContours(mask, cnts, 0, 100, 20);
 }
 
-void RaspiBot::object_follow(int target radius)
+void RaspiBot::object_follow()
 {
     // function that runs and updates a position of an object, and sends commands to follow it
     // set up camera
@@ -334,7 +334,7 @@ void RaspiBot::object_follow(int target radius)
         // get the position of the object
         vector<int> data = this->get_object_x(final_frame);
 
-        cout << "object at {" << data[0] << ", " << data[1] << << ", " << data[2] << "}" << endl;
+        cout << "object at {" << data[0] << ", " << data[1] << ", " << data[2] << "}" << endl;
 
         // send command accordingly:
         /*
@@ -344,40 +344,42 @@ void RaspiBot::object_follow(int target radius)
         * if object close, go bwd
          */
         // obj on left
-        if (data[0] < 140.0 && data[0] > 0.0)
+        if (data[0] < 100.0 && data[0] > 0.0)
         {
             cout << "on left" << endl;
             //move a little left, one step?
             this->send_command("LFT");
         }
-        else if (data[0] > 180.0)
+        else if (data[0] > 200.0)
         {
             cout << "on right" << endl;
             this->send_command("RIT");
         }
-        else if (data[0] < 180.0 && data[0] > 140.0)
+        else if (data[0] < 200.0 && data[0] > 100.0)
         {
+            this->send_command("stp");
             cout << "in middle " << endl;
         }
 
-        int radius_lower = target_radius*3/4;
-        int radius_upper = target_radius*5/4; //// TODOO CHECK THE VALUES HERE
-        // obj far
-        if (radius < radius_lower && radius > 0)
-        {
-            cout << "far" << endl;
-            // step fwd
-            this->send_command("FWD");
-        }
-        else if (radius > radius_upper)
-        {
-            cout << "close" << endl;
-            this->send_command("BWD");
-        }
-        else if (radius < radius_upper && radius > radius_lower)
-        {
-            cout << "good distance " << endl;
-        }
+        // int radius = data[2];
+        // int radius_lower = target_radius*3/4;
+        // int radius_upper = target_radius*5/4; //// TODOO CHECK THE VALUES HERE
+        // // obj far
+        // if (radius < radius_lower && radius > 0)
+        // {
+        //     cout << "far" << endl;
+        //     // step fwd
+        //     this->send_command("FWD");
+        // }
+        // else if (radius > radius_upper)
+        // {
+        //     cout << "close" << endl;
+        //     this->send_command("BWD");
+        // }
+        // else if (radius < radius_upper && radius > radius_lower)
+        // {
+        //     cout << "good distance " << endl;
+        // }
 
     }
 }
