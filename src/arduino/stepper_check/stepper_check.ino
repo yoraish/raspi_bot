@@ -59,9 +59,9 @@ void right_step(bool fwd = true)
     }
 }
 
-void move_steps(int steps, bool right_dir = true, bool left_dir = false, int slow = 5)
+void move_steps(int steps, bool right_dir = true, bool left_dir = false, int slow = 2)
 {
-
+    // delay is not needed here
     digitalWrite(right_dir_pin, right_dir);
     digitalWrite(left_dir_pin, left_dir);
 
@@ -80,6 +80,7 @@ void loop()
     //  move_steps(120, true, false);
     //  delay(1000);
 
+    int steps_per_command =12;
     // model as state machine
 
     switch (state)
@@ -139,29 +140,25 @@ void loop()
         }
         else if (serial_command == "W")
         {
-            right_step();
-            left_step();
+            move_steps(steps_per_command, true,true);
             serial_command = "";
         }
 
         else if (serial_command == "S")
         {
-            right_step(false);
-            left_step(false);
+            move_steps(steps_per_command, false,false);
             serial_command = "";
         }
 
         else if (serial_command == "D")
         {
-            right_step(false);
-            left_step();
+            move_steps(steps_per_command, false,true);
             serial_command = "";
         }
 
         else if (serial_command == "A")
         {
-            right_step();
-            left_step(false);
+            move_steps(steps_per_command, true,false);
             serial_command = "";
         }
         else
