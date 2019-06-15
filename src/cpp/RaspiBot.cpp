@@ -131,8 +131,8 @@ int RaspiBot::camera_feeder()
     // initializing camera feed
     VideoCapture cap(0);
     cap.set(CV_CAP_PROP_BUFFERSIZE, 1);    // internal buffer will now store only 3 frames
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320); // experimenting with this and the next lines
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, frame_width); // experimenting with this and the next lines
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, frame_height);
 
     if (!cap.isOpened())
     {
@@ -218,31 +218,27 @@ vector<int> RaspiBot::get_object_x(Mat img)
     vector<int> red_upper{10, 255, 255};
 
     // resize to const size
-    Mat resized = img;
-    resized.resize(600);
+    img.resize(600);
 
     // convolve with gaussian filter
-    Mat blurred = resized;
     Size kernel_size = Size(11, 11);
     //    kernel_size.height = 11;
     //    kernel_size.width = 11;
-    GaussianBlur(blurred, blurred, kernel_size, 0, 0);
+    GaussianBlur(img, img, kernel_size, 0, 0);
 
     // convert to HSV color scale
-    Mat hsv = blurred;
-    cvtColor(hsv, hsv, COLOR_BGR2HSV);
+    cvtColor(img, img, COLOR_BGR2HSV);
 
     // mask the image to only leave red things in
-    Mat mask = hsv;
-    inRange(mask, red_lower, red_upper, mask);
+    inRange(img, red_lower, red_upper, img);
     Mat kernel(3, 3, CV_64F, 0.33);
 
-    erode(mask, mask, kernel);
-    dilate(mask, mask, kernel);
+    erode(img, img, kernel);
+    dilate(img, img, kernel);
 
     vector<vector<Point>> cnts;
     vector<Vec4i> hir;
-    findContours(mask, cnts, hir, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    findContours(img, cnts, hir, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     if (cnts.size() > 0)
     {
@@ -271,11 +267,11 @@ vector<int> RaspiBot::get_object_x(Mat img)
         // cout << "center at row 0 |---" << center.y << "---| " << resized.rows << endl;
 
         // draw a small circle for the found contour's center
-        cv::circle(resized, center, radius, Scalar(255, 255, 155), 3);
+        // cv::circle(img, center, radius, Scalar(255, 255, 155), 3);
         // draw the enclosing circle
         // TODO -- to debug console
         // imshow("with dot", resized);
-        // waitKey(0);
+        // int key = cv::waitKey(10); // changed from 30
 
         vector<int> out;
         out.push_back(center.x);
@@ -285,12 +281,11 @@ vector<int> RaspiBot::get_object_x(Mat img)
     }
     else
     {
-        cout << "returning none" << endl;
         vector<int> out{-1, -1,-1};
         return out;
     }
 
-    drawContours(mask, cnts, 0, 100, 20);
+    drawContours(img, cnts, 0, 100, 20);
 }
 
 void RaspiBot::object_follow()
@@ -299,9 +294,9 @@ void RaspiBot::object_follow()
     // set up camera
     // initializing camera feed
     VideoCapture cap(0);
-    cap.set(CV_CAP_PROP_BUFFERSIZE, 1);    // internal buffer will now store only 3 frames
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320); // experimenting with this and the next lines
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+    cap.set(CV_CAP_PROP_BUFFERSIZE, 1);    // internal buffer will now store only 1 frames
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, frame_width); // experimenting with this and the next lines
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, frame_height);
 
     if (!cap.isOpened())
     {
@@ -324,15 +319,13 @@ void RaspiBot::object_follow()
         }
 
         // flip frame
-        Mat hflipped;
         // horizonatally
-        flip(frame, hflipped, 1);
+        flip(frame, frame, 1);
         // vertically
-        Mat final_frame;
-        flip(hflipped, final_frame, 0);
+        flip(frame, frame, 0);
 
         // get the position of the object
-        vector<int> data = this->get_object_x(final_frame);
+        vector<int> data = this->get_object_x(frame);
 
         cout << "object at {" << data[0] << ", " << data[1] << ", " << data[2] << "}" << endl;
 
@@ -344,42 +337,47 @@ void RaspiBot::object_follow()
         * if object close, go bwd
          */
         // obj on left
-        if (data[0] < 100.0 && data[0] > 0.0)
+        if (data[0] < object_leftmost && data[0] > 0.0)
         {
-            cout << "on left" << endl;
+            // cout << "on left" << endl;
             //move a little left, one step?
             this->send_command("LFT");
         }
-        else if (data[0] > 200.0)
+        else if (data[0] > object_rightmost)
         {
-            cout << "on right" << endl;
+            // cout << "on right" << endl;
             this->send_command("RIT");
         }
-        else if (data[0] < 200.0 && data[0] > 100.0)
+        else if (data[0] < object_rightmost && data[0] > object_leftmost) // only stop if also at a good distance!
+        // otherwise do nothing here
         {
-            this->send_command("stp");
-            cout << "in middle " << endl;
+            // this->send_command("stp");
+            // cout << "in middle " << endl;
         }
 
-        // int radius = data[2];
-        // int radius_lower = target_radius*3/4;
-        // int radius_upper = target_radius*5/4; //// TODOO CHECK THE VALUES HERE
-        // // obj far
-        // if (radius < radius_lower && radius > 0)
-        // {
-        //     cout << "far" << endl;
-        //     // step fwd
-        //     this->send_command("FWD");
-        // }
-        // else if (radius > radius_upper)
-        // {
-        //     cout << "close" << endl;
-        //     this->send_command("BWD");
-        // }
-        // else if (radius < radius_upper && radius > radius_lower)
-        // {
-        //     cout << "good distance " << endl;
-        // }
+        int radius = data[2];
+        int radius_lower = 21;
+        int radius_upper = 28; //// TODOO CHECK THE VALUES HERE
+        // obj far
+        if (radius < radius_lower && radius > 0)
+        {
+            // cout << "far" << endl;
+            // step fwd
+            this->send_command("FWD");
+        }
+        else if (radius > radius_upper)
+        {
+            // cout << "close" << endl;
+            this->send_command("BWD");
+        }
+
+        // if distance good and location good, then stop
+        else if (radius < radius_upper && radius > radius_lower && data[0] < object_rightmost && data[0] > object_leftmost)
+        {
+            this->send_command("stp");
+
+            // cout << "good distance " << endl;
+        }
 
     }
 }

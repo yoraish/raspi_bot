@@ -35,4 +35,9 @@ public:
     vector<int> get_object_x(Mat img);
     void object_follow();
     int target_radius = 40;
+    const int frame_width = 80;
+    const int frame_height = 60;
+    const int object_leftmost = frame_width/4;
+    const int object_rightmost = frame_width*3/4;
+
 };
