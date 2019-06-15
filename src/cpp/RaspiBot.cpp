@@ -67,6 +67,7 @@ void RaspiBot::send_command(string cmd)
 {
     // function that sends commands to the Arduino
     // cmd in "fwd", "bwd", "rit", "lft", "stp"
+    // commands in caps only ask for one step in that direction
     // fd is the channel we are communicating on
     // int fd = serialOpen("/dev/ttyACM0", 9600);
     string str_cmd;
@@ -94,6 +95,14 @@ void RaspiBot::send_command(string cmd)
     else if (cmd == "LFT")
     {
         str_cmd = "A\n";
+    }
+    else if (cmd == "FWD")
+    {
+        str_cmd = "W\n";
+    }
+    else if (cmd == "BWD")
+    {
+        str_cmd = "S\n";
     }
     else
     {
@@ -198,10 +207,10 @@ int RaspiBot::handle_command()
     }
 }
 
-pair<int, int> RaspiBot::get_object_x(Mat img)
+vector<int> RaspiBot::get_object_x(Mat img)
 {
     /*
-    Returns the location in Row,Col of the ball in the image
+    Returns the location and radius in Row,Col, radius of the ball in the image
     */
 
     // set thresholds for the color, set to red
@@ -268,22 +277,23 @@ pair<int, int> RaspiBot::get_object_x(Mat img)
         // imshow("with dot", resized);
         // waitKey(0);
 
-        pair<int, int> coord;
-        coord.first = center.x;
-        coord.second = center.y;
-        return coord;
+        vector<int> out;
+        out.push_back(center.x);
+        out.push_back(center.y);
+        out.push_back(radius);
+        return out;
     }
     else
     {
         cout << "returning none" << endl;
-        pair<int, int> coord(-1, -1);
-        return coord;
+        vector<int> out{-1, -1,-1};
+        return out;
     }
 
     drawContours(mask, cnts, 0, 100, 20);
 }
 
-void RaspiBot::object_follow()
+void RaspiBot::object_follow(int target radius)
 {
     // function that runs and updates a position of an object, and sends commands to follow it
     // set up camera
@@ -322,27 +332,53 @@ void RaspiBot::object_follow()
         flip(hflipped, final_frame, 0);
 
         // get the position of the object
-        pair<int, int> coord = this->get_object_x(final_frame);
+        vector<int> data = this->get_object_x(final_frame);
 
-        cout << "object at {" << coord.first << ", " << coord.second << "}" << endl;
+        cout << "object at {" << data[0] << ", " << data[1] << << ", " << data[2] << "}" << endl;
 
         // send command accordingly:
+        /*
+        * If object on the left, go right
+        * if object on the right, go left
+        * (And) if object far, go fwd
+        * if object close, go bwd
+         */
         // obj on left
-        if (coord.first < 140.0 && coord.first > 0.0)
+        if (data[0] < 140.0 && data[0] > 0.0)
         {
             cout << "on left" << endl;
             //move a little left, one step?
             this->send_command("LFT");
         }
-        else if (coord.first > 180.0)
+        else if (data[0] > 180.0)
         {
             cout << "on right" << endl;
             this->send_command("RIT");
         }
-        else if (coord.first < 180.0 && coord.first > 140.0)
+        else if (data[0] < 180.0 && data[0] > 140.0)
         {
             cout << "in middle " << endl;
         }
+
+        int radius_lower = target_radius*3/4;
+        int radius_upper = target_radius*5/4; //// TODOO CHECK THE VALUES HERE
+        // obj far
+        if (radius < radius_lower && radius > 0)
+        {
+            cout << "far" << endl;
+            // step fwd
+            this->send_command("FWD");
+        }
+        else if (radius > radius_upper)
+        {
+            cout << "close" << endl;
+            this->send_command("BWD");
+        }
+        else if (radius < radius_upper && radius > radius_lower)
+        {
+            cout << "good distance " << endl;
+        }
+
     }
 }
 

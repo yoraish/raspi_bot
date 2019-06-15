@@ -164,7 +164,6 @@ void loop()
             left_step(false);
             serial_command = "";
         }
-
         else
         {
             serial_command = "";

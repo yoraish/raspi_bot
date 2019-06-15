@@ -32,6 +32,6 @@ public:
     void send_command(string cmd);
     int handle_command();
     int camera_feeder();
-    pair<int,int> get_object_x(Mat img);
-    void object_follow();
+    vector<int> get_object_x(Mat img);
+    void object_follow(int target_radius = 40);
 };
